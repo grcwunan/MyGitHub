@@ -1,0 +1,473 @@
+必答题目收集：
+
+
+
+必会编程题目收集：
+1、快速排序
+2、生产者-消费者模式代码
+3、单例模式ACL和饿汉模式、枚举模式必会
+
+4、辗转相除法求是否互为质数
+
+
+
+
+1、手写快排算法
+public static int[] quickSort(int[] arr, int low, int high) {
+	int start = low;
+	int end = high;
+	int key = arr[low];
+	while(start < end) {
+		while(end > start && arr[end] >= key) {
+			end--;
+		}
+		if(arr[end] <= key) {
+			int temp = arr[end];
+			arr[end] = arr[start];
+			arr[start] = temp;
+		}
+		while(end > start && arr[start] <= key) {
+			start++;
+		}
+		if(arr[start] >= key) {
+			int temp = arr[start];
+			arr[start] = arr[end];
+			arr[end] = temp;
+		}
+		if(start > low) {
+			quickSort(arr, low, start - 1);
+		}
+		if(end < high) {
+			quickSort(arr, end + 1, high);
+		}
+	}
+	
+	return arr;
+}
+
+
+2、session与cookie的区别
+
+自答：a、session数据在服务端管理，cookie则保存在客户端浏览器中；
+	  
+	  补充：
+	  b、cookie一般用来保存用户信息(用户登录)，session的作用一般是服务端记录用户的状态(典型应用场景购物车)；
+	  c、session更安全，cookie一般需要加密保存在客户端，下次自动登录时用cookie保存的信息到服务端解密；
+	  
+	  附加：
+	  d、http是无状态的协议，两次不同的url请求，需要数据进行关联；
+	  e、单个cookie保存的数据一般不能超过4k；
+	  f、sessionID也通常用cookie来实现，但并非必要；
+	  
+答：
+	a、session数据通常保存在服务端，cookie通常保存在客户端浏览器中；
+	b、session在服务端保存用户的状态(典型应用场景购物车)，用sessionID来记录状态，通常也借助于cookie来实现；
+	c、相对来说session更安全，cookie一般加密保存，发送到服务端再进行解密；
+	d、http是无状态的协议，单个cookie一般不能超过4k；
+	e、session保存在内存、文件、数据库中都可以；
+	f、session的运行依赖于sessionID，而sessionID通常放在cookie中，
+	   如果客户端禁用cookie，那么sessionID也会失效，可以通过在url中添加的方式解决；
+	   
+三、1、Servlet负责接收用户请求HttpServletRequest，返回HttpServletResponse
+   使用方法doGet、doPost进行处理，初始化时需要调用init函数，销毁时要调用destroy；
+   2、一个servlet只会有一个实例，一个servlet可以对应多个url，servlet不是线程安全的；
+   3、servlet与CGI的对比
+   4、servlet的声明周期及其内部函数，init、destroy、doGet、doPost方法；
+   5、Form标签里的method的属性为get时调用doGet()，为post时调用doPost()。
+   
+   
+四、count(1)、count(*)、count(列)的区别与效率
+	count(*)包括了所有的列，不会忽略列值null
+	count(1)忽略了所有列，用1代表行，不会忽略列值null
+	count(列)忽略列值为null的行
+	
+	效率：
+	当count(列)的列为主键时，最快；
+	列不为主键列，count(1)比count(列)快；
+	如果有多个列，且没有主键，则count(1)优于count(*);
+	如果表中只有一个字段，则count(*)最优；
+	
+	
+	count(*)和count(1)不会忽略列值为null的行的计数，count(列)会忽略对应列值为null的行；
+	count(*)是包含所有列，count(1)忽略所有列，用1代表行；
+	
+	列为主键时，count(列)最优；否则，count(1)优于count(列)；
+	当有多个列且没有主键时，count(1)优于count(*)
+	如果表中只有一个字段，count(*)最优；
+	
+   
+四、转发与重定向的区别
+	1、转发是服务器的行为；重定向是客户端的行为
+	
+	
+五、SPRING的事务传播特性？
+
+
+六、死锁的4个必要条件：
+	互斥条件
+	不可剥夺条件
+	请求和保持条件
+	循环等待条件
+	
+七、生产者-消费者模式代码实现：
+
+// 实现方式一，忽略了try
+public class Test1{
+	private static LOCK = "lock";
+	private static Integer count = 0;
+	private static Integer FULL = 10;
+	
+	class Producer implements Runnable {
+		public void run() {
+			synchronized (LOCK) {
+				while(count == FULL) {
+					LOCK.wait();
+				}
+				count++;
+				LOCK.notifyAll();
+			}
+		}
+		
+	}
+	
+	class Consumer implements Runnable {
+		public void run() {
+			synchronized (LOCK) {
+				while(count == 0){
+					LOCK.wait();
+				}
+				count--;
+				LOCK.notifyAll();
+			}
+		}
+	}
+}
+
+// 实现方式二、
+public class Test2{
+	private static Integer count = 0;
+	private static Integer FULL = 10;
+	
+	private static Lock lock = new ReentrantLock();
+	private static Condition notEmpty = lock.newCondition();
+	private static Condition notFull = lock.newCondition();
+	class Producer implements Runnable {
+		public void run() {
+			lock.lock();
+			try {
+				while(count == FULL) {
+					notFull.await();
+				}
+				count++;
+				notEmpty.signal();
+			} finally {
+				lock.unlock();
+			}
+		}
+	}
+	class Consumer implements Runnable {
+		public void run() {
+			lock.lock();
+			try {
+				while(count == 0){
+					notEmpty.await();
+				}
+				count--;
+				notFull.signal();
+			} finally {
+				lock.unlock();
+			}
+		}
+	}
+}
+
+// 基于信号量的实现
+public class Test4 {
+	private static int count = 0;
+	final Semaphore notEmpty = new Semaphore(0);
+	final Semaphore notFull = new Semaphore(10);
+	final Semaphore mutex = new Semaphore(1);
+	
+	class Producer implements Runnable {
+		public void run() {
+			try {
+				notFull.acquire();
+				mutex.acquire();
+				count++;
+			} catch(...) {
+			} finally {
+				mutex.release();
+				notEmpty.release();
+			}
+		}
+	}
+	
+	class Consumer implements Runnable {
+		public void run() {
+			try {
+				notEmpty.acquire();
+				mutex.acquire();
+				count--;
+			} catch(...) {
+			} finally {
+				mutex.release();
+				notFull.release();
+			}
+		}
+	}
+}
+
+
+// 基于BlockingQueue实现
+public class Test3 {
+	private static int count = 0;
+	private final BlockingQueue<Integer> blockQueue = new BlockingQueue<Integer>(10);
+
+	class Producer implements Runnable {
+		public void run() {
+			blockQueue.put(1);
+			count++;
+		}
+	}
+	
+	class Consumer implements Runnable {
+		public void run() {
+			blockQueue.take();
+			count--;
+		}
+	}
+}
+	
+八、单例实现
+
+// 饿汉模式
+public class Singleton {
+	private static Singleton instance = new Singleton();
+	
+	private Singleton(){
+	}
+	
+	public Singleton getInstance() {
+		return instance;
+	}
+}
+
+// 双重检验
+public class Singleton {
+	private volatile static Singleton instance;
+	
+	private Singleton(){
+	}
+	
+	public Singleton getInstance() {
+		
+		if(instance == null) {
+			synchronized {
+				if(instance == null) {
+					instance = new Singleton();
+				}
+			}
+		}
+		return instance;
+	}
+}
+
+九、辗转相除法判断互为质数：
+
+	public static boolean isCoPrime(int num1, int num2) {
+        if(num1 < num2) {
+            int temp = num1;
+            num1 = num2;
+            num2 = temp;
+        }
+        int r = 0;
+        while((r = num1 % num2) != 0) {
+            num1 = num2;
+            num2 = r;
+        }
+        if(num2 == 1)
+            return true;
+        else
+            return false;
+    }
+	
+十、比较与自动拆装箱
+
+1、int和int之间，用==比较，肯定为true；
+2、int与Integer比较，Integer会自动拆箱，==和equals都肯定为true；
+3、Integer与Integer比较的时候，由于直接赋值的话会进行自动的装箱，当值在[-128,127]中的时候，不会创建对象，而是直接从缓存中获取已经创建好的对象，用==也为true
+4、Integer与new Integer，用==时肯定为false；
+5、new Integer与new Integer比较时，用==肯定为false；
+6、valueOf装箱，xxxValue拆箱
+7、Byte、Short、Integer、Long这几个类的实现类似
+
+十一、git常用方法
+
+git init //初始化，创建一个git仓库
+git add filename //把文件添加到缓冲区
+git add
+git add --all //添加所有文件
+git rm filename //删除
+git commit -m "提交说明" //
+git status
+git diff filename
+git log
+git reset
+git reset --hard HEAD^ //回退到上一个版本
+git reset --hard 版本号
+git reflog
+git branch //查看分支情况
+git branch 分支名 //创建分支
+git checkout 分支名 //切换当前分支到指定分支
+git checkout -b 分支名 //创建分支并切换到创建的分支
+git merge 分支名 //合并某分支的内容到当前分支
+git branch -d 分支名 //删除分支
+git tag
+git show 标签名
+git push origin --tags //将tag提交到远端仓库
+git push origin v1.0 //推送某个tag
+git remote add origin git://127.0.0.1/abc.git //增加了远程仓库abc
+git remote remove origin //移除远端仓库
+git pull
+git rm -r --cached //删除本地缓存
+
+
+十二、Oracle和Mysql创建存储过程
+-- Oracle
+create or replace procedure test_pro(sys in varchar2) is 
+
+  v_sys  test_table.SYSTID%TYPE;
+  v_varible1 number(10,2);
+  v_varible2 number(10,2);
+
+  CURSOR test_cursor IS
+  SELECT SYSTID, NUMBER 
+  from test_table;  
+
+BEGIN
+
+ for v_cursor in test_cursor LOOP
+   if sys = 'wld' then
+        select t.SYSTID, nvl(sum(t.var1+t.var2),0) 
+        into v_sys, v_varible1
+        from test_table t where  t.NUMBER = v_cursor.NUMBER;
+        dbms_output.put_line('SYS : ' || v_sys || ' v_varible1  : ' || v_varible1 );
+   end if;
+ END LOOP;
+END test_pro;
+
+-- MySQL
+-- 存储过程
+-- 1、需求：传入一个学生ID，查询该学生的信息
+    -- 带有输入参数的存储过程
+delimiter $
+create PROCEDURE stu_findByid(in sid int)
+begin
+    select * from student where id=sid;
+END $
+-- 调用存储过程
+call stu_findByid(1);
+
+-- 2、带有输出参数的存储过程
+delimiter $
+create procedure stu_out(out str varchar(20))
+begin
+    -- 给参数赋值
+    set str='这是一个输出参数';
+end $
+-- 删除存储过程
+drop procedure stu_inout;
+-- 调用存储过程
+-- 1)定义了一个变量
+-- 2）定义了一个会话变量接收存储过程输出的参数
+call stu_out(@name);
+select @name;
+-- 3、输入输出参数的存储过程
+delimiter $
+create procedure stu_inout(inout n int)
+begin
+    select n;
+    set n=500;
+end $
+set @n=10;
+call stu_inout(@n);
+select @n;
+
+-- 4、带条件判断的存储过程
+    -- 需求：输入一个正整数，如果1，返回“星期一”，如果2，返回“星期二。。。。其他返回输入错误”
+delimiter $
+create procedure stu_testIf(in num int,out str varchar(20))
+begin
+    if num=1 then   -- 开始
+        set str='星期一';
+    elseif num=2 then
+        set str='星期二';
+    elseif num=3 then
+        set str='星期三';
+    else
+        set str='输入错误';
+    end if;         -- 结束
+end $
+-- 执行存储过程
+call stu_testIf(2,@str);
+select @str;
+
+-- 5、带循环功能的存储过程
+    -- 输入一个整数，求和。比如输入100，统计1-100的和
+delimiter $
+create procedure stu_testWhile(in num int,out result int)
+begin
+        -- 定义两个局部变量
+        DECLARE i int default 1;
+        declare vsum int default 0;
+        while i<=num do
+                set vsum = vsum+i;
+                set i = i+1;
+        end while;
+        set result = vsum;
+END $
+call stu_testWhile(100,@result);
+select @result;
+drop procedure stu_testWhile;
+-- 6、使用查询的结果赋值给变量（into）
+delimiter $
+create procedure stu_findByid2(in eid int,out vname varchar(20))
+begin
+    select name into vname from student where id=eid;
+end
+call stu_findByid2(1,@vname);
+select @vname;
+-- 7、练习，编写一个存储过程
+use students;
+select * from user;
+    -- 如果学生的英语平均分小于等于70分，刚输出‘一般’
+    -- 如果学生的英语平均分大于70，且小于等于90分，刚输出‘良好’
+    -- 如果学生的英语平均分大于90分，刚输出‘优秀’
+delimiter $
+create procedure stu_testAvg(out str varchar(20))
+begin
+    -- 计算英语平均分
+    declare savg double;
+    select avg(score) into savg from user;
+    if savg<=70 then
+        set str='一般';
+    elseif savg>70 and savg<=90 then
+        set str='良好';
+    else 
+        set str='优秀';
+    end if;
+end $
+call stu_testAvg(@str);
+select @str;
+
+十三、Redis数据类型：string、set、hash、map、sorted set；
+
+
+
+
+
+
+
+
+
+

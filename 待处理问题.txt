@@ -1,0 +1,236 @@
+﻿待处理问题：
+
+
+import java.text.SimpleDateFormat;
+import java.util.Random;
+
+public class ThreadLocalExample implements Runnable{
+
+     // SimpleDateFormat 不是线程安全的，所以每个线程都要有自己独立的副本
+    private static final ThreadLocal<SimpleDateFormat> formatter = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyyMMdd HHmm"));
+
+    public static void main(String[] args) throws InterruptedException {
+        ThreadLocalExample obj = new ThreadLocalExample();
+        for(int i=0 ; i<10; i++){
+            Thread t = new Thread(obj, ""+i);
+            Thread.sleep(new Random().nextInt(1000));
+            t.start();
+        }
+    }
+
+    @Override
+    public void run() {
+        System.out.println("Thread Name= "+Thread.currentThread().getName()+" default Formatter = "+formatter.get().toPattern());
+        try {
+            Thread.sleep(new Random().nextInt(1000));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        //formatter pattern is changed here by thread, but it won't reflect to other threads
+        formatter.set(new SimpleDateFormat());
+
+        System.out.println("Thread Name= "+Thread.currentThread().getName()+" formatter = "+formatter.get().toPattern());
+    }
+
+}
+
+
+
+import java.util.Date;
+
+/**
+ * 这是一个简单的Runnable类，需要大约5秒钟来执行其任务。
+ * @author shuang.kou
+ */
+public class MyRunnable implements Runnable {
+
+    private String command;
+
+    public MyRunnable(String s) {
+        this.command = s;
+    }
+
+    @Override
+    public void run() {
+        System.out.println(Thread.currentThread().getName() + " Start. Time = " + new Date());
+        processCommand();
+        System.out.println(Thread.currentThread().getName() + " End. Time = " + new Date());
+    }
+
+    private void processCommand() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public String toString() {
+        return this.command;
+    }
+}
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+public class ThreadPoolExecutorDemo {
+
+    private static final int CORE_POOL_SIZE = 5;
+    private static final int MAX_POOL_SIZE = 10;
+    private static final int QUEUE_CAPACITY = 100;
+    private static final Long KEEP_ALIVE_TIME = 1L;
+    public static void main(String[] args) {
+
+        //使用阿里巴巴推荐的创建线程池的方式
+        //通过ThreadPoolExecutor构造函数自定义参数创建
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                CORE_POOL_SIZE,
+                MAX_POOL_SIZE,
+                KEEP_ALIVE_TIME,
+                TimeUnit.SECONDS,
+                new ArrayBlockingQueue<>(QUEUE_CAPACITY),
+                new ThreadPoolExecutor.CallerRunsPolicy());
+
+        for (int i = 0; i < 10; i++) {
+            //创建WorkerThread对象（WorkerThread类实现了Runnable 接口）
+            Runnable worker = new MyRunnable("" + i);
+            //执行Runnable
+            executor.execute(worker);
+        }
+        //终止线程池
+        executor.shutdown();
+        while (!executor.isTerminated()) {
+        }
+        System.out.println("Finished all threads");
+    }
+}
+
+
+1、什么时候可以不用过来行里？
+
+2、离职证明怎么拿？
+
+3、员工卡要交给哪位？
+
+4、档案放在哪边？如果超期未转走回怎样？企业年金找谢小燕？
+
+
+
+计划安排：工作与公务员考试
+
+1、
+7:30起床，8:00正式开始上课
+
+08:00 - 08:45  公务员阅读课程 + 做题 
+09:00 - 09:45  公务员阅读课程 + 做题
+10:00 - 10:45  计算机视频课程 + 实践
+11:00 - 11:45  计算机阅读课程 + 实践
+
+12:00 - 2:00 吃饭 + 睡觉 + 休息
+
+14:00 - 14:45  计算机视频课程 + 实践
+15:00 - 15:45  公务员阅读课程 + 做题
+16:00 - 16:45  计算机阅读课程 + 实践
+
+17:00 - 19:00 吃饭休息 + 运动
+
+19:00 - 19:45  公务员阅读课程 + 做题
+20:00 - 20:45  公务员阅读课程 + 做题
+21:00 - 21:45  计算机视频课程 + 实践
+
+21:45 - 自由活动
+
+
+1、读取配置文件实例化bean；
+2、使用set方法设置对象属性；
+3、检查Aware相关接口，如果bean实现了这些接口，调用相应的方法传入想要依赖；
+4、BeanPostprocess前置处理；postProcessBeforeInitialization()
+5、检查是否实现InitializingBean接口，执行afterPropertiesSet()方法；
+6、检查是否有自定义的init-method
+7、BeanPostprocess后置处理；postProcessAfterInitialization()
+8、bean使用；
+9、是否实现DisposableBean接口，执行destroy()方法；
+10、如果 Bean 在配置文件中的定义包含 destroy-method 属性，执行指定的方法。
+
+
+Spring：
+1、属性赋值(使用setter方法)
+2、使用构造函数；
+3、使用名称空间；
+
+容器启动完成前就已经创建好了对象；
+多实例时，默认不会创建实例bean，获取时再构造；
+
+1、标签名：list、map、entry、set、props、prop、null、value
+2、按照配置文件的顺序创建bean实例；depends-on：设置过bean之间的依赖
+3、bean的作用域，scope：
+	prototype：多实例
+	singleton：单实例
+	request：同一次请求，没什么用
+	session：同一次会话，没什么用
+	
+4、静态工厂、实例工厂
+
+	factory-method
+	factory-bean
+	
+5、FactoryBean接口是spring可以识别的工厂方法
+getObject()是工厂方法；
+getObjectType()返回创建的对象类型；
+isSingleton()是否单例；
+都是获取bean的时候再创建
+
+6、context:property
+
+7、自动装配：
+
+autowire="constructor",先按照类型进行装配，没有就直接null；
+如果按照类型找到了多个，以参数名作为id进行装配，否则null
+
+8、Spring Expression Language
+#{}
+调用静态方法：
+#{T(java.util.UUID).randomUUID().toString()}
+
+调用非静态方法：
+#{book01.getBookName()}
+
+9、注解：
+@Service：业务逻辑
+@Controller：控制器
+@Repository：数据库层
+@Component：
+
+context:component-scan: base-package use-default-filter(禁用默认过滤规则)
+	context:exclude-filter 排除
+	context:include-filter 扫描
+	
+@Autowired(required=true), 标注的属性必须装配，否则就报错,false值会有空指针风险；先按照类型，后利用变量名进行查找；该注解的方法会在启动容器时运行；只对引用类型有用吧？是spring框架的
+@Qualifier("bookService") ：制定一个名作为id，不用变量名作为id
+
+@Resource注解：是j2ee定义的；可能扩展性比Autowired强；
+@Inject注解：在EJB中用的，一般不用
+
+@ContextConfiguration(locations="配置文件位置")
+@RunWith(),指定用哪种驱动进行单元测试，默认Junit
+
+10、泛型依赖注入，泛型也是参考标准；
+
+面向切面编程: AOP
+
+1、
+
+
+
+
+https://www.javazhiyin.com/61354.html -- 程序练习
+https://www.javazhiyin.com/62059.html -- bean声明周期的代码跟踪理解
+序列化和反序列化实践
+刁钻的String面试问题及解答，试验，并查看String源码；
+@Qulifier
+kafka消费者端程序编写实践
+
+
+
